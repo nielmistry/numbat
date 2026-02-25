@@ -1,0 +1,17 @@
+[package]
+name = "numbat-pubchem"
+description = "A library to fetch and parse chemical compound data from PubChem"
+authors = ["Niel Mistry <niel@nielmistry.com>"]
+homepage = "https://numbat.dev/"
+repository = "https://github.com/sharkdp/numbat"
+version = "0.0.1"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+rust-version = "1.88"
+
+[dependencies]
+attohttpc = { version = "0.27.0", default-features = false, features = [
+    "tls-rustls-webpki-roots",
+]}
+quick-xml = "0.37.5"
+

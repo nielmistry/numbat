@@ -1240,6 +1240,7 @@ dependencies = [
  "num-rational",
  "num-traits",
  "numbat-exchange-rates",
+ "numbat-pubchem",
  "once_cell",
  "percent-encoding",
  "plotly",
@@ -1278,6 +1279,14 @@ dependencies = [
 [[package]]
 name = "numbat-exchange-rates"
 version = "0.6.0"
+dependencies = [
+ "attohttpc",
+ "quick-xml",
+]
+
+[[package]]
+name = "numbat-pubchem"
+version = "0.0.1"
 dependencies = [
  "attohttpc",
  "quick-xml",

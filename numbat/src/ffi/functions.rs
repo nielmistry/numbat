@@ -116,6 +116,7 @@ pub(crate) fn functions() -> &'static HashMap<&'static str, ForeignFunction> {
 
         // Database lookup
         insert_function!(_get_chemical_element_data_raw, 1..=1);
+        insert_function!(_get_chemical_compound_data_raw, 1..=1);
 
         // Plotting
         insert_function!(show, 1..=1);

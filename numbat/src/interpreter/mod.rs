@@ -78,6 +78,9 @@ pub enum RuntimeErrorKind {
     #[error("Chemical element not found: {0}")]
     ChemicalElementNotFound(String),
 
+    #[error("Chemical compound not found: {0}")]
+    ChemicalCompoundNotFound(String),
+
     #[error("Empty list")]
     EmptyList,
 

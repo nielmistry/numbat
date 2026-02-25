@@ -44,6 +44,7 @@ use physics::temperature_conversion
 use physics::speed_of_sound
 
 use chemistry::elements
+use chemistry::compounds
 
 use datetime::functions
 use datetime::unixtime

@@ -1,3 +1,5 @@
+use std::ops::Index;
+
 use compact_str::CompactString;
 
 use super::Args;
@@ -9,6 +11,7 @@ use crate::quantity::Quantity;
 use crate::typechecker::type_scheme::TypeScheme;
 use crate::typed_ast::DType;
 use crate::value::Value;
+use numbat_pubchem::fetch_pubchem_property;
 
 pub fn _get_chemical_element_data_raw(
     _ctx: &mut FfiContext,
@@ -150,6 +153,99 @@ pub fn _get_chemical_element_data_raw(
         ))
     } else {
         Err(Box::new(RuntimeErrorKind::ChemicalElementNotFound(
+            pattern.to_string(),
+        )))
+    }
+}
+
+pub fn _get_chemical_compound_data_raw(
+    _ctx: &mut FfiContext,
+    mut args: Args,
+    _return_type: &TypeScheme,
+) -> Result<Value, Box<RuntimeErrorKind>> {
+    use crate::span::{ByteIndex, Span};
+    use crate::typed_ast::Type;
+    use crate::typed_ast::{StructInfo, StructKind};
+    use indexmap::IndexMap;
+    use std::sync::Arc;
+    let pattern = string_arg!(args).to_lowercase();
+
+    let mut fields: IndexMap<CompactString, (Span, Type)> = IndexMap::new();
+
+    let unknown_span = Span {
+        start: ByteIndex(0),
+        end: ByteIndex(0),
+        code_source_id: 0,
+    };
+    let type_scalar = Type::Dimension(DType::scalar());
+
+    fields.insert(
+        CompactString::const_new("cid"),
+        (unknown_span, Type::String),
+    );
+
+    fields.insert(
+        CompactString::const_new("formula_smiles"),
+        (unknown_span, Type::String),
+    );
+
+    fields.insert(
+        CompactString::const_new("iupac_name"),
+        (unknown_span, Type::String),
+    );
+
+    fields.insert(
+        CompactString::const_new("exact_mass_daltons"),
+        (unknown_span, type_scalar.clone()),
+    );
+
+    fields.insert(
+        CompactString::const_new("molar_mass_gram_per_mole"),
+        (unknown_span, type_scalar.clone()),
+    );
+
+    fields.insert(
+        CompactString::const_new("density_gram_per_cm3"),
+        (unknown_span, type_scalar.clone()),
+    );
+
+    let info = StructInfo {
+        name: CompactString::const_new("_ChemicalCompoundRaw"),
+        kind: StructKind::Instance(vec![]),
+        definition_span: unknown_span,
+        fields,
+    };
+
+    if let Some(formula_smiles) = fetch_pubchem_property(&pattern, "CanonicalSMILES") {
+        let formula_smiles = formula_smiles.trim().to_string();
+        let cid = pattern;
+        let iupac_name = fetch_pubchem_property(&cid, "IUPACName")
+            .unwrap_or_else(|| "unknown".to_string())
+            .trim()
+            .to_string();
+        let molar_mass_str =
+            fetch_pubchem_property(&cid, "MolecularWeight").unwrap_or_else(|| "NaN".to_string());
+        let molar_mass = molar_mass_str.trim().parse::<f64>().unwrap_or(f64::NAN);
+        let exact_mass_str =
+            fetch_pubchem_property(&cid, "ExactMass").unwrap_or_else(|| "NaN".to_string());
+        let exact_mass = exact_mass_str.trim().parse::<f64>().unwrap_or(f64::NAN);
+        let density_str =
+            fetch_pubchem_property(&cid, "Density").unwrap_or_else(|| "NaN".to_string());
+        let density = density_str.trim().parse::<f64>().unwrap_or(f64::NAN);
+
+        Ok(Value::StructInstance(
+            Arc::new(info),
+            vec![
+                Value::String(cid.to_string().into()),
+                Value::String(formula_smiles.into()),
+                Value::String(iupac_name.into()),
+                Value::Quantity(Quantity::from_scalar(exact_mass)),
+                Value::Quantity(Quantity::from_scalar(molar_mass)),
+                Value::Quantity(Quantity::from_scalar(density)),
+            ],
+        ))
+    } else {
+        Err(Box::new(RuntimeErrorKind::ChemicalCompoundNotFound(
             pattern.to_string(),
         )))
     }
