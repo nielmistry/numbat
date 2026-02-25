@@ -13,14 +13,29 @@ pub fn fetch_pubchem_property(cid: &str, property: &str) -> Option<String> {
     }
 }
 
-pub fn fetch_pubchem_properties(cid: &str, properties: &[&str]) -> Option<HashMap<String, String>> {
+pub fn fetch_pubchem_properties(
+    cid_or_name: &str,
+    properties: &[&str],
+) -> Option<HashMap<String, String>> {
     use serde_json::Value;
+    let mut url = String::new();
 
     let properties_str = properties.join(",");
-    let url = format!(
-        "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/{}/property/{}/JSON",
-        cid, properties_str
-    );
+    if cid_or_name.parse::<u64>().is_ok() {
+        // It's a CID, use it directly
+        url = format!(
+            "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/{}/property/{}/JSON",
+            cid_or_name.trim(),
+            properties_str
+        );
+    } else {
+        // It's a name, first fetch the CID
+        url = format!(
+            "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{}/property/{}/JSON",
+            cid_or_name.trim(),
+            properties_str
+        );
+    }
 
     println!("Fetching from URL: {}", url);
     let res = attohttpc::get(&url).send().ok()?;
@@ -54,7 +69,7 @@ pub fn fetch_pubchem_properties(cid: &str, properties: &[&str]) -> Option<HashMa
         for (i, prop_name) in properties.iter().enumerate() {
             map.insert(prop_name.to_string(), values[i].clone());
         }
-        map.insert("cid".to_string(), cid.to_string());
+        map.insert("cid".to_string(), props.get("CID")?.to_string());
         Some(map)
     } else {
         None
