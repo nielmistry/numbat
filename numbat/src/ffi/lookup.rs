@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::ops::Index;
 
 use compact_str::CompactString;
 use numbat_pubchem::fetch_pubchem_properties;
@@ -13,7 +12,6 @@ use crate::quantity::Quantity;
 use crate::typechecker::type_scheme::TypeScheme;
 use crate::typed_ast::DType;
 use crate::value::Value;
-use numbat_pubchem::fetch_pubchem_property;
 
 pub fn _get_chemical_element_data_raw(
     _ctx: &mut FfiContext,
