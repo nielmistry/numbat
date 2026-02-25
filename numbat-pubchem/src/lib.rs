@@ -29,7 +29,7 @@ pub fn fetch_pubchem_properties(
             properties_str
         );
     } else {
-        // It's a name, first fetch the CID
+        // Use the name lookup
         url = format!(
             "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{}/property/{}/JSON",
             cid_or_name.trim(),
