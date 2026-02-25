@@ -128,6 +128,8 @@ dependencies = [
  "http",
  "log",
  "rustls",
+ "serde",
+ "serde_json",
  "url",
  "webpki-roots 0.26.11",
 ]
@@ -1290,6 +1292,8 @@ version = "0.0.1"
 dependencies = [
  "attohttpc",
  "quick-xml",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

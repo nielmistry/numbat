@@ -1,6 +1,8 @@
+use std::collections::HashMap;
 use std::ops::Index;
 
 use compact_str::CompactString;
+use numbat_pubchem::fetch_pubchem_properties;
 
 use super::Args;
 use super::FfiContext;
@@ -158,6 +160,29 @@ pub fn _get_chemical_element_data_raw(
     }
 }
 
+fn parse_data(map: &HashMap<String, String>, property: &str, type_to_parse: &str) -> Value {
+    let value_str = map.get(property);
+    match type_to_parse {
+        "string" => {
+            if let Some(s) = value_str {
+                Value::String(s.trim().into())
+            } else {
+                Value::String("unknown".into())
+            }
+        }
+        "f64" => {
+            if let Some(s) = value_str {
+                Value::Quantity(Quantity::from_scalar(
+                    s.trim().parse::<f64>().unwrap_or(f64::NAN),
+                ))
+            } else {
+                Value::Quantity(Quantity::from_scalar(f64::NAN))
+            }
+        }
+        _ => Value::String("unknown".into()),
+    }
+}
+
 pub fn _get_chemical_compound_data_raw(
     _ctx: &mut FfiContext,
     mut args: Args,
@@ -204,11 +229,6 @@ pub fn _get_chemical_compound_data_raw(
         (unknown_span, type_scalar.clone()),
     );
 
-    fields.insert(
-        CompactString::const_new("density_gram_per_cm3"),
-        (unknown_span, type_scalar.clone()),
-    );
-
     let info = StructInfo {
         name: CompactString::const_new("_ChemicalCompoundRaw"),
         kind: StructKind::Instance(vec![]),
@@ -216,37 +236,34 @@ pub fn _get_chemical_compound_data_raw(
         fields,
     };
 
-    if let Some(formula_smiles) = fetch_pubchem_property(&pattern, "CanonicalSMILES") {
-        let formula_smiles = formula_smiles.trim().to_string();
-        let cid = pattern;
-        let iupac_name = fetch_pubchem_property(&cid, "IUPACName")
-            .unwrap_or_else(|| "unknown".to_string())
-            .trim()
-            .to_string();
-        let molar_mass_str =
-            fetch_pubchem_property(&cid, "MolecularWeight").unwrap_or_else(|| "NaN".to_string());
-        let molar_mass = molar_mass_str.trim().parse::<f64>().unwrap_or(f64::NAN);
-        let exact_mass_str =
-            fetch_pubchem_property(&cid, "ExactMass").unwrap_or_else(|| "NaN".to_string());
-        let exact_mass = exact_mass_str.trim().parse::<f64>().unwrap_or(f64::NAN);
-        let density_str =
-            fetch_pubchem_property(&cid, "Density").unwrap_or_else(|| "NaN".to_string());
-        let density = density_str.trim().parse::<f64>().unwrap_or(f64::NAN);
+    let properties_to_request = [
+        "ConnectivitySMILES",
+        "IUPACName",
+        "ExactMass",
+        "MolecularWeight",
+    ];
 
+    let properties = fetch_pubchem_properties(&pattern, &properties_to_request);
+
+    println!(
+        "Fetched properties for pattern '{}': {:?}",
+        pattern, properties
+    );
+
+    if let Some(props) = properties {
         Ok(Value::StructInstance(
             Arc::new(info),
             vec![
-                Value::String(cid.to_string().into()),
-                Value::String(formula_smiles.into()),
-                Value::String(iupac_name.into()),
-                Value::Quantity(Quantity::from_scalar(exact_mass)),
-                Value::Quantity(Quantity::from_scalar(molar_mass)),
-                Value::Quantity(Quantity::from_scalar(density)),
+                parse_data(&props, "cid", "string"),
+                parse_data(&props, "ConnectivitySMILES", "string"),
+                parse_data(&props, "IUPACName", "string"),
+                parse_data(&props, "ExactMass", "f64"),
+                parse_data(&props, "MolecularWeight", "f64"),
             ],
         ))
     } else {
-        Err(Box::new(RuntimeErrorKind::ChemicalCompoundNotFound(
+        return Err(Box::new(RuntimeErrorKind::ChemicalCompoundNotFound(
             pattern.to_string(),
-        )))
+        )));
     }
 }

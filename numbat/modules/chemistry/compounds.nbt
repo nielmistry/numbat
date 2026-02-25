@@ -6,7 +6,6 @@ struct _ChemicalCompoundRaw {
     iupac_name: String,
     exact_mass_daltons: Scalar,
     molar_mass_gram_per_mole: Scalar,
-    density_gram_per_cm3: Scalar,
 }
 
 struct ChemicalCompound {
@@ -15,7 +14,6 @@ struct ChemicalCompound {
     iupac_name: String,
     exact_mass: Mass,
     molar_mass: MolarMass,
-    density: MassDensity,
 }
 
 fn _get_chemical_compound_data_raw(pattern: String) -> _ChemicalCompoundRaw
@@ -27,7 +25,6 @@ fn _convert_from_raw(raw: _ChemicalCompoundRaw) -> ChemicalCompound =
         iupac_name: raw.iupac_name,
         exact_mass: raw.exact_mass_daltons * dalton,
         molar_mass: raw.molar_mass_gram_per_mole * g/mol,
-        density: raw.density_gram_per_cm3 * g/cm³,
     }
 
 @name("Chemical compound")
