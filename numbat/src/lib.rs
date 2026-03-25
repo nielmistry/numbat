@@ -7,6 +7,7 @@ mod column_formatter;
 pub mod command;
 mod currency;
 pub mod datetime;
+pub mod pubchem;
 mod decorator;
 pub mod diagnostic;
 mod dimension;
@@ -159,6 +160,13 @@ impl Context {
 
     pub fn set_exchange_rates(xml_content: &str) {
         ExchangeRatesCache::set_from_xml(xml_content);
+    }
+
+    /// Inject a PubChem compound by name (or CID) from a raw JSON response string.
+    /// The JSON should be a standard PubChem PUG REST PropertyTable response.
+    /// Call this before evaluating expressions that use `compound(...)` in WASM contexts.
+    pub fn set_pubchem_data(name: &str, json_content: &str) {
+        pubchem::cache_set_from_json(name, json_content);
     }
 
     pub fn use_test_exchange_rates() {

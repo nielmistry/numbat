@@ -93,6 +93,12 @@ impl Numbat {
             .unwrap();
     }
 
+    /// Inject PubChem compound data from a raw PubChem PUG REST JSON response.
+    /// `name` should be the same identifier (name or CID) that will be passed to `compound(...)`.
+    pub fn set_pubchem_data(&mut self, name: &str, json_content: &str) {
+        Context::set_pubchem_data(name, json_content);
+    }
+
     fn format(&self, markup: &numbat::markup::Markup, indent: bool) -> String {
         let fmt: Box<dyn Formatter> = match self.format_type {
             FormatType::JqueryTerminal => Box::new(JqueryTerminalFormatter {}),

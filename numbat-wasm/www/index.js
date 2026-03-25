@@ -33,7 +33,35 @@ function updateUrlQuery(query) {
     history.replaceState(null, null, url);
 }
 
-function interpret(input) {
+const PUBCHEM_PROPERTIES = "ConnectivitySMILES,IUPACName,ExactMass,MolecularWeight";
+
+async function fetch_pubchem_compound(name) {
+    try {
+        const encoded = encodeURIComponent(name.trim());
+        const lookup = /^\d+$/.test(name.trim()) ? "cid" : "name";
+        const url = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/${lookup}/${encoded}/property/${PUBCHEM_PROPERTIES}/JSON`;
+        const response = await fetch(url);
+        if (!response.ok) return;
+        const json = await response.text();
+        numbat.set_pubchem_data(name.trim().toLowerCase(), json);
+    } catch (e) {
+        console.error("Failed to fetch PubChem data for:", name, e);
+    }
+}
+
+async function prefetch_compounds(input) {
+    const pattern = /compound\s*\(\s*["']([^"']+)["']\s*\)/g;
+    const fetches = [];
+    let match;
+    while ((match = pattern.exec(input)) !== null) {
+        fetches.push(fetch_pubchem_compound(match[1]));
+    }
+    if (fetches.length > 0) {
+        await Promise.all(fetches);
+    }
+}
+
+async function interpret(input) {
     // Skip empty lines or comments
     var input_trimmed = input.trim();
     if (input_trimmed === "" || (input_trimmed[0] === "#" && input_trimmed.indexOf("\n") == -1)) {
@@ -55,6 +83,9 @@ function interpret(input) {
 
         return cmd_result.output;
     }
+
+    // Pre-fetch any PubChem compounds referenced in the input
+    await prefetch_compounds(input);
 
     // Not a command - interpret as Numbat code
     var result = numbat.interpret(input);

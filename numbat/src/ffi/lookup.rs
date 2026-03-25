@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use compact_str::CompactString;
-use numbat_pubchem::fetch_pubchem_properties;
 
 use super::Args;
 use super::FfiContext;
@@ -234,19 +233,15 @@ pub fn _get_chemical_compound_data_raw(
         fields,
     };
 
-    let properties_to_request = [
-        "ConnectivitySMILES",
-        "IUPACName",
-        "ExactMass",
-        "MolecularWeight",
-    ];
+    let properties = crate::pubchem::cache_get(&pattern);
 
-    let properties = fetch_pubchem_properties(&pattern, &properties_to_request);
-
-    println!(
-        "Fetched properties for pattern '{}': {:?}",
-        pattern, properties
-    );
+    #[cfg(feature = "fetch-pubchem")]
+    let properties = properties.or_else(|| {
+        crate::pubchem::fetch_and_cache(
+            &pattern,
+            &["ConnectivitySMILES", "IUPACName", "ExactMass", "MolecularWeight"],
+        )
+    });
 
     if let Some(props) = properties {
         Ok(Value::StructInstance(

@@ -1249,6 +1249,7 @@ dependencies = [
  "pretty_dtoa",
  "rand 0.9.1",
  "rust-embed",
+ "serde_json",
  "strfmt",
  "strsim",
  "termcolor",
